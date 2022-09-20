@@ -5,18 +5,16 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
-import pandas as pd
 import pygame
-from PIL import Image
 from pygame import freetype
 
-from utils import overlapping_n_grams
-
+# These are settings for 9 image patches of size 16 x 16 pixels
 DEFAULT_FONT_SIZE = 10
 DEFAULT_PAD_SIZE = 3
-DEFAULT_PPB = 20
-MAX_SEQ_LENGTH = 7
+DEFAULT_PPB = 16
+MAX_SEQ_LENGTH = 9
 MAX_PIXELS_LEN = MAX_SEQ_LENGTH * DEFAULT_PPB
+DPI = 150
 
 
 logger = logging.getLogger(__name__)
@@ -50,6 +48,7 @@ class Encoding:
             sentence_b, and None for special patches.
     """
 
+    original_text: str
     pixel_values: Union[List[np.ndarray], np.ndarray]
     sep_patches: List[int]
     num_text_patches: int
@@ -64,7 +63,7 @@ class TextImageGenerator:
     def __init__(
         self,
         font_file: str,
-        dpi: int = 150,
+        dpi: int = DPI,
         background_color: str = "white",
         font_color: str = "black",
         font_size: int = DEFAULT_FONT_SIZE,
@@ -263,6 +262,7 @@ class TextImageGenerator:
         num_text_patches = math.ceil(offset / self.pixels_per_patch)
 
         encoding = Encoding(
+            original_text=text,
             pixel_values=self.get_image_from_surface(surface),
             num_text_patches=num_text_patches,
             sep_patches=sep_patches
@@ -337,41 +337,21 @@ class TextImageGenerator:
         self.font = font
 
 
-def main(args):
+# if __name__ == '__main__':
+#     # import matplotlib.pyplot as plt
+#     from PIL import Image
 
-    gen = TextImageGenerator(
-        font_file=args.font_file
-    )
-    encoding = gen(args.text)
+#     from utils import overlapping_n_grams
 
-    if isinstance(encoding, List):
-        for idx in range(len(encoding)):
-            arr = encoding[idx].pixel_values
-            np2pil = Image.fromarray(arr)
-            np2pil.save(
-                f"/home/asohn3/baraslab/hla/Data/pep2imgtxt/pil_{idx+1}.png")
-    else:
-        arr = encoding.pixel_values
-        np2pil = Image.fromarray(arr)
-        np2pil.save(
-            f"/home/asohn3/baraslab/hla/Data/pep2imgtxt/pil_1.png")
+#     font_file = '/home/asohn3/baraslab/hla/Fonts/NotoMono-Regular.ttf'
+#     pep1 = 'YDCNECGKKFWKKFSPD'
+#     # pep1 = 'A*31:01'
+#     ng1 = overlapping_n_grams(pep1, 9)
 
+#     gen1 = TextImageGenerator(font_file=font_file)
+#     enc1 = gen1(ng1)
+#     # enc1 = gen1(pep1)
 
-if __name__ == "__main__":
-    import argparse
-
-    inp = overlapping_n_grams("AKHRGPAHDLALEPDSP", n_gram_size=9)
-    # inp = "AKHRGPAHDLALEPDSP"
-    # inp = pd.read_pickle(
-    #     '/home/asohn3/baraslab/hla/Data/regression_subset/TCGA-2F-A9KP-01A-11D-A38G-08_final_nonsyn_p9.pkl'
-    # )
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--font-file", type=str,
-                        default="/home/asohn3/baraslab/hla/Fonts/NotoMono-Regular.ttf")
-    parser.add_argument("--text", type=str, default=inp)
-    args = parser.parse_args()
-
-    logging.basicConfig(level=logging.INFO)
-
-    main(args)
+#     print(enc1[0].pixel_values.shape)
+#     pil1 = Image.fromarray(enc1[0].pixel_values)
+#     display(pil1)
